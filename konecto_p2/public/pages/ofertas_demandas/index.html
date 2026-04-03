@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Ofertas y Demandas - Konecto</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../shared/css/global.css">
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">Konecto</a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="../dashboard/index.html">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="../login/index.html">Login</a></li>
+                    <li class="nav-item"><a class="navbar-brand fw-bold" href="#">Ofertas y demandas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="../usuarios/index.html">Usuarios</a></li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <span id="usuarioActivo" class="badge bg-secondary me-3">-no login-</span>
+                    <button id="logoutButton" class="btn btn-outline-danger btn-sm d-none">Cerrar Sesión</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Nueva Oferta/Demanda</h5>
+                        <form id="formEmpleo">
+                            <div class="mb-2"><label class="form-label">Título</label><input type="text" id="titulo" class="form-control" required></div>
+                            <div class="mb-2"><label class="form-label">Email</label><input type="email" id="emailE" class="form-control" required></div>
+                            <div class="mb-2"><label class="form-label">Fecha</label><input type="date" id="fecha" class="form-control" required></div>
+                            <div class="mb-2"><label class="form-label">Descripción</label><textarea id="desc" class="form-control" rows="2" required></textarea></div>
+                            <div class="mb-3">
+                                <label class="form-label">Tipo</label>
+                                <select id="tipo" class="form-select">
+                                    <option value="Oferta">Oferta</option>
+                                    <option value="Demanda">Demanda</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">Publicar</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">
+                        <h6 class="mb-3">Estadísticas (Canvas)</h6>
+                        <canvas id="graficoEmpleos" width="250" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Listado</h5>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Título</th><th>Email</th><th>Tipo</th><th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaEmpleosBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="ofertas_demandas.js"></script>
+</body>
+</html>

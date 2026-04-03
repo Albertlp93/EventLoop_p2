@@ -1,0 +1,13 @@
+.table-hover tbody tr:hover {
+    background-color: #f1f4f9;
+    transition: background-color 0.2s;
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+}
+
+.btn-primary {
+    font-weight: 600;
+}
