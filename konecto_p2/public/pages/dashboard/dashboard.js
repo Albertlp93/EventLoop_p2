@@ -1,75 +1,72 @@
 import * as almacenaje from '../../shared/js/almacenaje.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-    actualizarNavbar();
-    await cargarTarjetas();
+    actualizarInterfaz();
+    await cargarCards();
 
     const origen = document.getElementById('contenedorOrigen');
     const destino = document.getElementById('contenedorDestino');
 
-    // Configurar zonas de drop
     [origen, destino].forEach(zona => {
-        zona.addEventListener('dragover', (e) => {
-            e.preventDefault(); // Necesario para permitir el drop
+        zona.addEventListener('dragover', e => {
+            e.preventDefault();
             zona.classList.add('dragover');
         });
-
-        zona.addEventListener('dragleave', () => {
-            zona.classList.remove('dragover');
-        });
-
-        zona.addEventListener('drop', (e) => {
+        zona.addEventListener('dragleave', () => zona.classList.remove('dragover'));
+        zona.addEventListener('drop', e => {
             e.preventDefault();
             zona.classList.remove('dragover');
-            const idTarjeta = e.dataTransfer.getData('text/plain');
-            const tarjeta = document.getElementById(idTarjeta);
-            if (tarjeta) {
-                zona.appendChild(tarjeta);
-                console.log(`Tarjeta ${idTarjeta} movida a ${zona.id}`);
-            }
+            const id = e.dataTransfer.getData('text/plain');
+            const card = document.getElementById(id);
+            if (card) zona.appendChild(card);
         });
+    });
+
+    document.getElementById('logoutButton').addEventListener('click', () => {
+        almacenaje.cerrarSesion();
+        window.location.reload();
     });
 });
 
-async function cargarTarjetas() {
+async function cargarCards() {
     const contenedor = document.getElementById('contenedorOrigen');
     const datos = await almacenaje.obtenerVoluntariados();
-    
     contenedor.innerHTML = '';
-    
+
     datos.forEach(item => {
         const card = document.createElement('div');
-        card.className = 'card card-draggable mb-3 shadow-sm';
-        card.id = `card-${item.id}`;
-        card.draggable = true; // Requisito API Drag & Drop
+        const claseTipo = item.tipo === 'Oferta' ? 'tarjeta-oferta' : 'tarjeta-demanda';
         
+        card.className = `card ${claseTipo} card-draggable p-3`;
+        card.id = `vol-${item.id}`;
+        card.draggable = true;
+
         card.innerHTML = `
-            <div class="card-body">
-                <h6 class="card-title">${item.titulo}</h6>
-                <p class="small text-muted mb-0">${item.tipo} - ${item.email}</p>
+            <div class="card-body p-0">
+                <h5 class="card-title">${item.titulo.toUpperCase()}</h5>
+                <div class="mt-2">
+                    <span class="badge-tarjeta">${item.tipo}</span>
+                    <span class="badge-tarjeta">${item.email}</span>
+                </div>
             </div>
         `;
 
-        // Evento cuando empezamos a arrastrar
-        card.addEventListener('dragstart', (e) => {
+        card.addEventListener('dragstart', e => {
             e.dataTransfer.setData('text/plain', card.id);
-            card.style.opacity = '0.5';
+            card.style.opacity = "0.5";
         });
-
-        card.addEventListener('dragend', () => {
-            card.style.opacity = '1';
-        });
+        card.addEventListener('dragend', () => card.style.opacity = "1");
 
         contenedor.appendChild(card);
     });
 }
 
-function actualizarNavbar() {
-    const display = document.getElementById('usuarioActivo');
+function actualizarInterfaz() {
     const user = almacenaje.obtenerUsuarioActivo();
     if (user) {
-        display.textContent = user;
-        display.className = 'badge bg-success me-3';
+        document.getElementById('usuarioActivo').textContent = user;
+        document.getElementById('nombreUsuarioHero').textContent = user;
+        document.getElementById('avatarUsuario').textContent = user.charAt(0).toUpperCase();
         document.getElementById('logoutButton').classList.remove('d-none');
     }
 }

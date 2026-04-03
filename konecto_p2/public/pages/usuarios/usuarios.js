@@ -1,101 +1,71 @@
 import * as almacenaje from '../../shared/js/almacenaje.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Inicialización
-    actualizarNavbar();
-    pintarTablaUsuarios();
+    actualizarNavbarUI();
+    pintarTabla();
 
     const userForm = document.getElementById('userForm');
-    const logoutBtn = document.getElementById('logoutButton');
-
-    // 2. Evento de Alta de Usuario
+    
+    // Gestión del Alta
     userForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-
-        // Captura de datos
-        const nuevoUsuario = {
+        const nuevo = {
             nombre: document.getElementById('nombre').value,
             email: document.getElementById('emailUser').value,
             password: document.getElementById('passUser').value
         };
 
         try {
-            // Llamada asíncrona (Requisito nota máxima)
-            await almacenaje.guardarUsuario(nuevoUsuario);
-            alert("Usuario registrado con éxito");
+            await almacenaje.guardarUsuario(nuevo);
+            alert("Usuario registrado");
             userForm.reset();
-            pintarTablaUsuarios(); // Actualización dinámica
-        } catch (error) {
-            alert("Error: " + error);
+            pintarTabla();
+        } catch (err) {
+            alert(err);
         }
     });
 
-    // 3. Evento Cerrar Sesión
-    logoutBtn.addEventListener('click', () => {
+    // Gestión del Logout
+    document.getElementById('logoutButton').addEventListener('click', () => {
         almacenaje.cerrarSesion();
-        window.location.href = '../login/index.html';
+        window.location.reload();
     });
 });
 
-/**
- * Función para renderizar la tabla de usuarios desde IndexedDB
- */
-async function pintarTablaUsuarios() {
+async function pintarTabla() {
     const tbody = document.getElementById('tablaUsuariosBody');
-    tbody.innerHTML = ''; // Limpiar antes de pintar
+    tbody.innerHTML = '';
+    const lista = await almacenaje.obtenerUsuarios();
 
-    try {
-        const usuarios = await almacenaje.obtenerUsuarios();
+    lista.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${u.nombre}</td>
+            <td>${u.email}</td>
+            <td>••••••</td>
+            <td>
+                <button class="btn-eliminar" data-email="${u.email}">BORRAR</button>
+            </td>
+        `;
         
-        usuarios.forEach(u => {
-            const fila = document.createElement('tr');
-            fila.innerHTML = `
-                <td>${u.nombre}</td>
-                <td>${u.email}</td>
-                <td>••••••</td>
-                <td>
-                    <button class="btn btn-danger btn-sm btn-borrar" data-email="${u.email}">
-                        Borrar
-                    </button>
-                </td>
-            `;
-            tbody.appendChild(fila);
+        tr.querySelector('.btn-eliminar').addEventListener('click', async () => {
+            if(confirm(`¿Borrar a ${u.email}?`)) {
+                await almacenaje.borrarUsuario(u.email);
+                pintarTabla();
+            }
         });
-
-        // Asignar eventos a los botones de borrar creados
-        document.querySelectorAll('.btn-borrar').forEach(boton => {
-            boton.addEventListener('click', async (e) => {
-                const emailABorrar = e.target.getAttribute('data-email');
-                if (confirm(`¿Seguro que quieres borrar a ${emailABorrar}?`)) {
-                    await almacenaje.borrarUsuario(emailABorrar);
-                    pintarTablaUsuarios(); // Refrescar tabla
-                }
-            });
-        });
-
-    } catch (error) {
-        console.error(error);
-    }
+        tbody.appendChild(tr);
+    });
 }
 
-function actualizarNavbar() {
+function actualizarNavbarUI() {
+    const user = almacenaje.obtenerUsuarioActivo();
     const display = document.getElementById('usuarioActivo');
     const logoutBtn = document.getElementById('logoutButton');
-    const user = almacenaje.obtenerUsuarioActivo();
 
     if (user) {
         display.textContent = user;
-        // QUITAMOS el gris y PONEMOS el verde (igual que en login)
-        display.classList.remove('bg-secondary');
-        display.classList.add('bg-success');
-        
+        display.style.color = "var(--amarillo)";
         logoutBtn.classList.remove('d-none');
-    } else {
-        display.textContent = "-no login-";
-        // VOLVEMOS al gris si no hay nadie
-        display.classList.remove('bg-success');
-        display.classList.add('bg-secondary');
-        
-        logoutBtn.classList.add('d-none');
     }
 }

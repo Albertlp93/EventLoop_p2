@@ -3,85 +3,114 @@ import * as almacenaje from '../../shared/js/almacenaje.js';
 document.addEventListener('DOMContentLoaded', async () => {
     actualizarNavbar();
     await refrescarVista();
+    
+    // --- PRECARGA DE DATOS POR DEFECTO ---
+    const inputFecha = document.getElementById('fecha');
+    const inputEmail = document.getElementById('emailContacto');
+    
+    // 1. Establecer fecha actual (YYYY-MM-DD)
+    const hoy = new Date().toISOString().split('T')[0];
+    inputFecha.value = hoy;
 
-    const form = document.getElementById('formEmpleo');
-    form.addEventListener('submit', async (e) => {
+    // 2. Establecer email si hay sesión activa
+    const usuarioLogueado = almacenaje.obtenerUsuarioActivo();
+    if (usuarioLogueado) {
+        inputEmail.value = usuarioLogueado;
+    }
+
+    // Manejo del Formulario
+    document.getElementById('formEmpleos').addEventListener('submit', async (e) => {
         e.preventDefault();
         const datos = {
             titulo: document.getElementById('titulo').value,
-            email: document.getElementById('emailE').value,
+            email: document.getElementById('emailContacto').value,
             fecha: document.getElementById('fecha').value,
-            descripcion: document.getElementById('desc').value,
-            tipo: document.getElementById('tipo').value
+            tipo: document.getElementById('tipo').value,
+            descripcion: document.getElementById('descripcion').value
         };
+        
         await almacenaje.guardarVoluntariado(datos);
-        form.reset();
+        document.getElementById('formEmpleos').reset();
+        
+        // Tras el reset, volvemos a poner los valores por defecto
+        inputFecha.value = hoy;
+        if (usuarioLogueado) inputEmail.value = usuarioLogueado;
+        
         await refrescarVista();
     });
 });
 
 async function refrescarVista() {
-    const empleos = await almacenaje.obtenerVoluntariados();
-    pintarTabla(empleos);
-    generarGraficoNativo(empleos);
+    const datos = await almacenaje.obtenerVoluntariados();
+    pintarTabla(datos);
+    dibujarGrafico(datos);
 }
 
-function pintarTabla(lista) {
-    const body = document.getElementById('tablaEmpleosBody');
-    body.innerHTML = '';
-    lista.forEach(item => {
+function pintarTabla(datos) {
+    const tbody = document.getElementById('tablaEmpleosBody');
+    tbody.innerHTML = '';
+    
+    datos.forEach(item => {
         const tr = document.createElement('tr');
+        const badgeClass = item.tipo === 'Oferta' ? 'badge-oferta' : 'badge-demanda';
+        
         tr.innerHTML = `
             <td>${item.titulo}</td>
             <td>${item.email}</td>
-            <td><span class="badge ${item.tipo === 'Oferta' ? 'bg-primary' : 'bg-warning'}">${item.tipo}</span></td>
-            <td><button class="btn btn-danger btn-sm" onclick="borrar(${item.id})">Borrar</button></td>
+            <td>${item.fecha}</td>
+            <td><span class="badge-tipo ${badgeClass}">${item.tipo}</span></td>
+            <td>
+                <button class="btn-eliminar" data-id="${item.id}">BORRAR</button>
+            </td>
         `;
-        // Nota: El botón borrar necesita que la función sea global o añadir eventListener
-        tr.querySelector('button').addEventListener('click', async () => {
+        
+        tr.querySelector('.btn-eliminar').addEventListener('click', async () => {
             await almacenaje.borrarVoluntariado(item.id);
             await refrescarVista();
         });
-        body.appendChild(tr);
+        
+        tbody.appendChild(tr);
     });
 }
 
-/**
- * Función que dibuja en el Canvas de forma nativa
- */
-function generarGraficoNativo(lista) {
-    const canvas = document.getElementById('graficoEmpleos');
+function dibujarGrafico(datos) {
+    const canvas = document.getElementById('graficoCanvas');
     const ctx = canvas.getContext('2d');
-    
-    const ofertas = lista.filter(i => i.tipo === 'Oferta').length;
-    const demandas = lista.filter(i => i.tipo === 'Demanda').length;
-    const total = ofertas + demandas || 1; // Evitar división por cero
+    const ofertas = datos.filter(d => d.tipo === 'Oferta').length;
+    const demandas = datos.filter(d => d.tipo === 'Demanda').length;
+    const total = ofertas + demandas || 1;
 
-    // Limpiar canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Dibujar barra de Ofertas
-    ctx.fillStyle = '#0d6efd';
-    const hOfe = (ofertas / total) * 150;
-    ctx.fillRect(50, 180 - hOfe, 40, hOfe);
-    ctx.fillText("Ofert.", 50, 195);
-
-    // Dibujar barra de Demandas
-    ctx.fillStyle = '#ffc107';
-    const hDem = (demandas / total) * 150;
-    ctx.fillRect(150, 180 - hDem, 40, hDem);
-    ctx.fillText("Demand.", 150, 195);
     
-    ctx.fillStyle = '#000';
-    ctx.fillText(`Total: ${lista.length}`, 100, 20);
+    // Configuración de barras
+    const maxH = 140;
+    const hOf = (ofertas / total) * maxH;
+    const hDem = (demandas / total) * maxH;
+
+    // Dibujar Ofertas (Naranja)
+    ctx.fillStyle = '#e07040';
+    ctx.fillRect(60, 170 - hOf, 50, hOf);
+    ctx.fillStyle = '#212529';
+    ctx.fillText(ofertas, 80, 165 - hOf);
+
+    // Dibujar Demandas (Azul Marino)
+    ctx.fillStyle = '#1a3a6b';
+    ctx.fillRect(170, 170 - hDem, 50, hDem);
+    ctx.fillStyle = '#212529';
+    ctx.fillText(demandas, 190, 165 - hDem);
+
+    // Eje base
+    ctx.strokeStyle = '#1a3a6b';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(30, 170); ctx.lineTo(250, 170); ctx.stroke();
 }
 
 function actualizarNavbar() {
-    const display = document.getElementById('usuarioActivo');
     const user = almacenaje.obtenerUsuarioActivo();
+    const display = document.getElementById('usuarioActivo');
+    const logoutBtn = document.getElementById('logoutButton');
     if (user) {
         display.textContent = user;
-        display.className = 'badge bg-success me-3';
-        document.getElementById('logoutButton').classList.remove('d-none');
+        logoutBtn.classList.remove('d-none');
     }
 }
